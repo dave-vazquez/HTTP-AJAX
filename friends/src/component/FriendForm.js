@@ -30,95 +30,72 @@ const FormHeader = styled.h1`
 
 class FriendForm extends React.Component {
   state = {
-    id: undefined,
-    name: "",
-    age: undefined,
-    email: "",
-    image: ""
+    friend: this.props.activeFriend || {
+      id: undefined,
+      name: "",
+      age: undefined,
+      email: "",
+      image: ""
+    }
   };
 
   onChangeHandler = e => {
-    this.setState({
-      [e.target.name]: e.target.value
-    });
+    e.persist();
+
+    this.setState(prevState => ({
+      friend: {
+        ...prevState.friend,
+        [e.target.name]: e.target.value
+      }
+    }));
   };
 
   onSubmitHandler = e => {
     e.preventDefault();
-
-    let friend = {
-      name: this.state.name,
-      age: this.state.age,
-      email: this.state.email,
-      image: this.state.image
-    };
-
-    this.formTypeAdd()
-      ? this.props.addFriend(friend)
-      : this.props.updateFriend({ id: this.state.id, ...friend });
-
-    this.props.history.push("/");
-  };
-
-  formTypeAdd = () => {
-    return this.props.type === "add";
-  };
-
-  componentDidMount = () => {
-    if (!this.formTypeAdd()) {
-      let id = this.props.match.params.id;
-      let friend = this.props.friends.find(
-        (friend, i) => `${friend.id}` === id
-      );
-
-      this.setState({
-        id: id,
-        name: friend.name,
-        age: friend.age,
-        email: friend.email,
-        image: friend.image
-      });
-    }
+    
+    this.props.activeFriend
+      ? this.props.updateFriend(this.state.friend)
+      : this.props.addFriend(this.state.friend);
   };
 
   render() {
+    console.log("render", this.state);
     return (
       <FriendFormContainer>
         <Form onSubmit={this.onSubmitHandler}>
           <FormHeader>
-            {this.formTypeAdd() ? "Add New Friend" : "Update Friend"}
+            {this.props.activeFriend ? "Update Friend" : "Add Friend"}
           </FormHeader>
           <input
             type="text"
             name="name"
             placeholder="Name"
-            value={this.state.name || ""}
+            value={this.state.friend.name || ""}
             onChange={this.onChangeHandler}
           />
           <input
             type="text"
             name="age"
             placeholder="Age"
-            value={this.state.age || ""}
+            value={this.state.friend.age || ""}
             onChange={this.onChangeHandler}
           />
           <input
             type="text"
             name="email"
             placeholder="Email"
-            value={this.state.email || ""}
+            value={this.state.friend.email || ""}
             onChange={this.onChangeHandler}
           />
           <input
             type="text"
             name="image"
             placeholder="Image"
-            value={this.state.image || ""}
+            value={this.state.friend.image || ""}
             onChange={this.onChangeHandler}
           />
           <button onSubmit={this.onSubmitHandler}>
-            {" "}
-            {this.formTypeAdd() ? "Add New Friend" : "Update Friend"}
+            {this.props.activeFriend ? "Update Friend" : "Add Friend"}
           </button>
         </Form>
       </FriendFormContainer>

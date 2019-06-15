@@ -29,18 +29,18 @@ class App extends React.Component {
       friends: []
     };
 
-    this.localHost = "http://localhost:5000";
+    this.localHost = "http://localhost:5000/friends";
   }
 
   componentDidMount = () => {
     axios
-      .get(`${this.localHost}/friends`)
-      .then(res =>
+      .get(`${this.localHost}`)
+      .then(res => {
         this.setState({
           friends: res.data,
           getFailed: false
-        })
-      )
+        });
+      })
       .catch(err => {
         this.setState({
           getFailed: true
@@ -50,12 +50,13 @@ class App extends React.Component {
 
   addFriend = newFriend => {
     axios
-      .post(`${this.localHost}/friends`, newFriend)
+      .post(`${this.localHost}`, newFriend)
       .then(res => {
         this.setState({
           friends: res.data,
           postFailed: false
         });
+        this.props.history.push("/");
       })
       .catch(err => {
         this.setState({
@@ -66,16 +67,34 @@ class App extends React.Component {
 
   updateFriend = friend => {
     axios
-      .put(`${this.localHost}/friends/${friend.id}`, friend)
+      .put(`${this.localHost}/${friend.id}`, friend)
       .then(res => {
         this.setState({
           friends: res.data,
           putFailed: false
         });
+        this.props.history.push("/");
       })
       .catch(err => {
         this.setState({
           putFailed: true
+        });
+      });
+  };
+
+  deleteFriend = id => {
+    axios
+      .delete(`${this.localHost}/${id}`)
+      .then(res => {
+        this.setState({
+          friends: res.data,
+          deleteFailed: false
+        });
+        this.props.history.push("/");
+      })
+      .catch(err => {
+        this.setState({
+          deleteFailed: true
         });
       });
   };
@@ -87,7 +106,13 @@ class App extends React.Component {
   };
 
   render() {
-    const { friends, getFailed, postFailed, putFailed } = this.state;
+    const {
+      friends,
+      getFailed,
+      postFailed,
+      putFailed,
+      deleteFailed
+    } = this.state;
     return (
       <AppContainer>
         <Route
@@ -99,8 +124,16 @@ class App extends React.Component {
               return <ErrorMessage>Error adding friend...</ErrorMessage>;
             } else if (putFailed) {
               return <ErrorMessage>Error updating friend...</ErrorMessage>;
+            } else if (deleteFailed) {
+              return <ErrorMessage>Error deleting friend...</ErrorMessage>;
             } else {
-              return <FriendsList {...props} friends={friends} />;
+              return (
+                <FriendsList
+                  {...props}
+                  friends={friends}
+                  deleteFriend={this.deleteFriend}
+                />
+              );
             }
           }}
         />
@@ -113,11 +146,12 @@ class App extends React.Component {
         <Route
           path="/edit/:id"
           render={props => {
+            const id = props.match.params.id - 1;
             return (
               <FriendForm
                 {...props}
                 updateFriend={this.updateFriend}
-                friends={friends}
+                activeFriend={friends[id]}
               />
             );
           }}

@@ -23,12 +23,12 @@ const AddFriendLink = styled(Link)`
 
 class FriendsList extends React.Component {
   render() {
-    const { friends } = this.props;
+    const { friends, deleteFriend } = this.props;
     return (
       <FreindsListContainer>
         <AddFriendLink to="add">Add New Friend</AddFriendLink>
         {friends.map(friend => (
-          <Friend key={friend.id} friend={friend} />
+          <Friend key={friend.id} friend={friend} deleteFriend={deleteFriend} />
         ))}
       </FreindsListContainer>
     );

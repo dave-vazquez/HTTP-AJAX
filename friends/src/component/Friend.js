@@ -65,6 +65,7 @@ const FriendContainer = styled.div`
 class Friend extends React.Component {
   render() {
     const { id, image, name, age, email } = this.props.friend;
+    const { deleteFriend } = this.props;
     return (
       <FriendContainer>
         <div>
@@ -84,7 +85,7 @@ class Friend extends React.Component {
             }}
           >
             <StyledLink to={`edit/${id}`}>Update</StyledLink>
-            <StyledButton>Delete</StyledButton>
+            <StyledButton onClick={() => deleteFriend(id)}>Delete</StyledButton>
           </div>
         </section>
       </FriendContainer>
