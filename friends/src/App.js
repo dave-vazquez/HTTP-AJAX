@@ -1,77 +1,40 @@
 import React from "react";
+import { Route } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
 import "./App.css";
+import FriendForm from "./component/FriendForm";
+import FriendsList from "./component/FriendsList";
 
 const AppContainer = styled.div`
   display: flex;
+  justify-content: center;
+
   width: 100%;
-  height: 100vh;
-
-  background-color: #fafafa;
-`;
-
-const FriendsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  width: 50%;
   min-height: 100vh;
-
-  overflow-y: auto;
 `;
 
-const Friend = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+const ErrorMessage = styled.h1`
+  width: 100%;
 
-  margin: 20px 0;
-  padding: 20px;
-  border: 1px solid black;
-
-  background-color: #ffffff;
-
-  box-shadow: 4px 4px 10px rgb(0, 0, 0, 0.75);
-`;
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  width: 50%;
-`;
-
-const FriendForm = styled.form`
-  display: flex;
-  flex-direction: column;
-
-  padding: 20px;
-  border: 1px solid black;
-
-  background-color: #ffffff;
-
-  box-shadow: 4px 4px 4px rgb(0, 0, 0, 0.25);
+  font-size: 1.6rem;
+  text-align: center;
 `;
 
 class App extends React.Component {
-  state = {
-    friends: [],
-    getFailed: false,
-    postFailed: false,
-    deleteFailed: false,
-    name: "",
-    age: "",
-    email: ""
-  };
+  constructor() {
+    super();
+
+    this.state = {
+      friends: []
+    };
+
+    this.localHost = "http://localhost:5000";
+  }
 
   componentDidMount = () => {
     axios
-      .get("http://localhost:5000/friends")
+      .get(`${this.localHost}/friends`)
       .then(res =>
         this.setState({
           friends: res.data,
@@ -85,28 +48,13 @@ class App extends React.Component {
       });
   };
 
-  onChangeHandler = e => {
-    this.setState({
-      [e.target.name]: e.target.value
-    });
-  };
-
-  onSubmitHandler = e => {
-    e.preventDefault();
-
+  addFriend = newFriend => {
     axios
-      .post("http://localhost:5000/friends", {
-        name: this.state.name,
-        age: this.state.age,
-        email: this.state.email
-      })
+      .post(`${this.localHost}/friends`, newFriend)
       .then(res => {
         this.setState({
           friends: res.data,
-          postFailed: false,
-          name: "",
-          age: "",
-          email: ""
+          postFailed: false
         });
       })
       .catch(err => {
@@ -116,92 +64,64 @@ class App extends React.Component {
       });
   };
 
-  onClickHandler = friendID => {
+  updateFriend = friend => {
     axios
-      .delete(`http://localhost:5000/friends/${friendID}`)
+      .put(`${this.localHost}/friends/${friend.id}`, friend)
       .then(res => {
         this.setState({
           friends: res.data,
-          deleteFailed: false,
-          name: "",
-          age: "",
-          email: ""
+          putFailed: false
         });
       })
       .catch(err => {
         this.setState({
-          deleteFailed: true
+          putFailed: true
         });
       });
   };
 
+  onChangeHandler = e => {
+    this.setState({
+      [e.target.name]: e.target.value
+    });
+  };
+
   render() {
-    const {
-      friends,
-      getFailed,
-      postFailed,
-      deleteFailed,
-      name,
-      age,
-      email
-    } = this.state;
+    const { friends, getFailed, postFailed, putFailed } = this.state;
     return (
       <AppContainer>
-        <FriendsContainer>
-          {friends === [] ? (
-            <Friend>Fetching data my dude...</Friend>
-          ) : (
-            friends.map(friend => (
-              <Friend
-                key={friend.id}
-                className="friend"
-                style={{ display: "flex", flexDirection: "column" }}
-              >
-                <h1>{friend.name}</h1>
-                <span>Age: {friend.age}</span>
-                <span>Email: {friend.email}</span>
-                {deleteFailed && <span>{"Error Deleting Data"}</span>}
-                <button
-                  onClick={() => {
-                    const friendID = friend.id; // probably don't need this... friend.id stored in closure?
-                    this.onClickHandler(friendID);
-                  }}
-                >
-                  Delete
-                </button>
-              </Friend>
-            ))
+        <Route
+          path="/"
+          render={props => {
+            if (getFailed) {
+              return <ErrorMessage>Error getting friends...</ErrorMessage>;
+            } else if (postFailed) {
+              return <ErrorMessage>Error adding friend...</ErrorMessage>;
+            } else if (putFailed) {
+              return <ErrorMessage>Error updating friend...</ErrorMessage>;
+            } else {
+              return <FriendsList {...props} friends={friends} />;
+            }
+          }}
+        />
+        <Route
+          path="/add"
+          render={props => (
+            <FriendForm {...props} addFriend={this.addFriend} type="add" />
           )}
-        </FriendsContainer>
-        <FormContainer>
-          <FriendForm onSubmit={this.onSubmitHandler}>
-            <h1>Add Friend Form</h1>
-            <input
-              type="text"
-              name="name"
-              placeholder="Name"
-              value={name}
-              onChange={this.onChangeHandler}
-            />
-            <input
-              type="text"
-              name="age"
-              placeholder="Age"
-              value={age}
-              onChange={this.onChangeHandler}
-            />
-            <input
-              type="text"
-              name="email"
-              placeholder="Email"
-              value={email}
-              onChange={this.onChangeHandler}
-            />
-            <button onSubmit={this.onSubmitHandler}>Add Friend</button>
-            {getFailed && <h1>{"Error Getting Data"}</h1>}
-            {postFailed && <h1>{"Error Posting Data"}</h1>}
-          </FriendForm>
-        </FormContainer>
+        />
+        <Route
+          path="/edit/:id"
+          render={props => {
+            return (
+              <FriendForm
+                {...props}
+                updateFriend={this.updateFriend}
+                friends={friends}
+              />
+            );
+          }}
+        />
       </AppContainer>
     );
   }
